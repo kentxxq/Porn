@@ -21,11 +21,8 @@ class Mp4info:
         }
 
     # 设置请求头
-    # 传入的seek表示代表需要跳过的字节数量
-    # 在这里进行判断是为了后续获取视频的宽高信息预留的
-    def _set_headers(self, seek, type):
-        if type in ['moov', 'duration']:
-            self.s.headers['Range'] = 'bytes={}-{}'.format(seek, seek + 7)
+    def _set_headers(self, seek):
+        self.s.headers['Range'] = 'bytes={}-{}'.format(seek, seek + 7)
 
     def _send_request(self):
         try:
@@ -36,7 +33,7 @@ class Mp4info:
         return data
 
     def _find_moov_request(self):
-        self._set_headers(self.seek, type='moov')
+        self._set_headers(self.seek)
         data = self._send_request()
         size = int(struct.unpack('>I', data[:4])[0])
         flag = data[-4:].decode('ascii')
@@ -44,7 +41,7 @@ class Mp4info:
 
     def _find_duration_request(self):
         # 4+4是moov的大小和标识,跳过20个字符，直接读到time_scale，duration
-        self._set_headers(seek=self.seek+4+4+20, type='duration')
+        self._set_headers(seek=self.seek+4+4+20)
         data = self._send_request()
         time_scale = int(struct.unpack('>I', data[:4])[0])
         duration = int(struct.unpack('>I', data[-4:])[0])
