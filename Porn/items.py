@@ -18,3 +18,15 @@ class A46ekItem(scrapy.Item):
     video_url = scrapy.Field()
     category = scrapy.Field()
     duration = scrapy.Field()
+
+
+class Jav777Item(scrapy.Item):
+    # define the fields for your item here like:
+    # name = scrapy.Field()
+    detail_url = scrapy.Field()
+    name = scrapy.Field()
+    img_url = scrapy.Field()
+    update_date = scrapy.Field()
+    video_url = scrapy.Field()
+    category = scrapy.Field()
+    duration = scrapy.Field()

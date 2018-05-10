@@ -23,6 +23,10 @@ A46EK_USERNAME = 'username'
 A46EK_PASSWORD = 'password'
 
 
+# scrapy-splash
+SPLASH_URL = 'your_SPLASH_URL'
+
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Porn (+http://www.yourdomain.com)'
 

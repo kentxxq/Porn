@@ -14,14 +14,6 @@ from urllib.parse import quote
 from Porn.tools.mediainfo import Mp4info
 
 
-"""
-本来打算用redis，但是用name做key，分类就只能放到list里面去了。很麻烦
-就选用了mongodb来存放数据
-
-把同一个网站上面的不同入口分开处理，这样就可以简单实现增量爬取
-"""
-
-
 class A46ekSpider_10(scrapy.Spider):
     name = 'a46ek_10'
     allowed_domains = ['46ek.com']
@@ -31,6 +23,8 @@ class A46ekSpider_10(scrapy.Spider):
             'Porn.pipelines.A46ekPipeline': 400
         }
     }
+
+    ua = 'PC'
 
     category = '制服丝袜'
 
