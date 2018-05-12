@@ -9,6 +9,11 @@ from scrapy import signals
 
 from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 import random
+from selenium.webdriver.chrome import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
+from scrapy.http import TextResponse, HtmlResponse
+from Porn.selenium_class.custom_wait import mp4_element_load_complete
+import logging
 
 
 class PornSpiderMiddleware(object):
@@ -107,6 +112,9 @@ class PornDownloaderMiddleware(object):
 
 
 class Ua(UserAgentMiddleware):
+    """
+    切换User-Agent
+    """
     PC_uas = ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
               'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Safari/604.1.38',
               'Mozilla/5.0 (compatible; Baiduspider-render/2.0; +http://www.baidu.com/search/spider.html)', "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
@@ -138,3 +146,46 @@ class Ua(UserAgentMiddleware):
         if spider.ua == 'PC':
             ua = random.choice(self.PC_uas)
             request.headers['User-Agent'] = ua
+
+
+class SeleniumDownloaderMiddleware(object):
+    """
+    selenium下载中间件
+    """
+
+    def __init__(self, *args, **kwargs):
+        UA = 'Mozilla/5.0 (Linux; Android 4.1.1; GT-N7100 Build/JRO03C) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/35.0.1916.138 Mobile Safari/537.36 T7/6.3'
+        mobileEmulation = {"userAgent": UA}
+
+        options = webdriver.Options()
+        options.add_experimental_option('mobileEmulation', mobileEmulation)
+        # options.set_headless(headless=True)
+        self.driver = webdriver.WebDriver(chrome_options=options)
+        print('初始化')
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        o = cls()
+        crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
+        return o
+
+    def process_request(self, request, spider):
+        # print(request.meta)
+        # print(request.url)
+        if 'mp' in request.meta:
+            # wait = WebDriverWait(self.driver, 10)
+            self.driver.get(request.url)
+            try:
+                wait = WebDriverWait(self.driver, 10)
+                video_url = wait.until(mp4_element_load_complete())
+                # print('返回给中间件的视频地址：'+video_url)
+                if video_url:
+                    return HtmlResponse(request.url, body=video_url, encoding="utf-8", request=request)
+            except Exception:
+                print('出错了')
+
+        return None
+
+    def spider_closed(self, spider):
+        self.driver.quit()
+        print('浏览器正常关闭')
