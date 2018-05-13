@@ -16,15 +16,11 @@ NEWSPIDER_MODULE = 'Porn.spiders'
 
 COMMANDS_MODULE = 'Porn.commands'
 
-# mongodb a46ek settings
-A46EK_IP = 'ip'
-A46EK_PORT = 'port'
-A46EK_USERNAME = 'username'
-A46EK_PASSWORD = 'password'
-
-
-# scrapy-splash
-SPLASH_URL = 'your_SPLASH_URL'
+# mongodb settings
+MONGODB_IP = 'ip'
+MONGODB_PORT = 'port'
+MONGODB_USERNAME = 'username'
+MONGODB_PASSWORD = 'password'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

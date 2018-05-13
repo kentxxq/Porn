@@ -10,7 +10,7 @@ import logging
 import scrapy
 
 
-class A46ekPipeline(object):
+class PornPipeline(object):
     def __init__(self, host, port, username, password):
         self.host = host
         self.port = int(port)
@@ -20,30 +20,30 @@ class A46ekPipeline(object):
     @classmethod
     def from_crawler(cls, crawler):
         settings = crawler.settings
-        return cls(host=settings['A46EK_IP'],
-                   port=settings['A46EK_PORT'],
-                   username=settings['A46EK_USERNAME'],
-                   password=settings['A46EK_PASSWORD'])
+        return cls(host=settings['MONGODB_IP'],
+                   port=settings['MONGODB_PORT'],
+                   username=settings['MONGODBUSERNAME'],
+                   password=settings['MONGODB_PASSWORD'])
 
     def process_item(self, item, spider):
         try:
-            self.a46ek.insert_one(dict(item))
+            self.client.insert_one(dict(item))
         except DuplicateKeyError:
-            self.a46ek.save(dict(item))
+            self.client.save(dict(item))
         except Exception as e:
             raise scrapy.exceptions.CloseSpider('数据处理出现错误！'+e)
         finally:
             return item
 
     def open_spider(self, spider):
-        self.a46ek = MongoClient(host=self.host,
-                                 port=self.port,
-                                 username=self.username,
-                                 password=self.password)['porn']['a46ek']
+        self.client = MongoClient(host=self.host,
+                                  port=self.port,
+                                  username=self.username,
+                                  password=self.password)['porn'][spider.table]
         spider.exist_list = []
         if hasattr(spider, 'incremental'):
             if spider.incremental == True:
-                results = self.a46ek.find()
+                results = self.client.find()
                 for result in results:
                     spider.exist_list.append(result['detail_url'])
 

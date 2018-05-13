@@ -154,12 +154,12 @@ class SeleniumDownloaderMiddleware(object):
     """
 
     def __init__(self, *args, **kwargs):
+        options = webdriver.Options()
+
         UA = 'Mozilla/5.0 (Linux; Android 4.1.1; GT-N7100 Build/JRO03C) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/35.0.1916.138 Mobile Safari/537.36 T7/6.3'
         mobileEmulation = {"userAgent": UA}
-
-        options = webdriver.Options()
         options.add_experimental_option('mobileEmulation', mobileEmulation)
-        # options.set_headless(headless=True)
+        options.set_headless(headless=True)
         self.driver = webdriver.WebDriver(chrome_options=options)
         print('初始化')
 
@@ -170,15 +170,11 @@ class SeleniumDownloaderMiddleware(object):
         return o
 
     def process_request(self, request, spider):
-        # print(request.meta)
-        # print(request.url)
         if 'mp' in request.meta:
-            # wait = WebDriverWait(self.driver, 10)
             self.driver.get(request.url)
             try:
                 wait = WebDriverWait(self.driver, 10)
                 video_url = wait.until(mp4_element_load_complete())
-                # print('返回给中间件的视频地址：'+video_url)
                 if video_url:
                     return HtmlResponse(request.url, body=video_url, encoding="utf-8", request=request)
             except Exception:

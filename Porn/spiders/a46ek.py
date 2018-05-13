@@ -4,7 +4,7 @@
 import scrapy
 import html5lib
 from bs4 import BeautifulSoup
-from Porn.items import A46ekItem
+from Porn.items import PornItem
 import re
 import io
 import datetime
@@ -20,9 +20,11 @@ class A46ekSpider_10(scrapy.Spider):
     start_urls = ['http://www.46ek.com/list/10.html']
     custom_settings = {
         'ITEM_PIPELINES': {
-            'Porn.pipelines.A46ekPipeline': 400
+            'Porn.pipelines.PornPipeline': 400
         }
     }
+
+    table = 'a46ek'
 
     ua = 'PC'
 
@@ -42,7 +44,7 @@ class A46ekSpider_10(scrapy.Spider):
             if self.exist_list and detail_url in self.exist_list:
                 raise scrapy.exceptions.CloseSpider(
                     '截止到'+response.urljoin(detail_url)+'，增量爬取完成' + self.name)
-            item = A46ekItem()
+            item = PornItem()
             item['category'] = self.category
             item['name'] = li.find('img').get('alt')
             # 因为部分的路径包括有中文字符，所以做一次处理
@@ -69,6 +71,7 @@ class A46ekSpider_10(scrapy.Spider):
                 # 由于部分网站是有视频长度信息可以爬取的，所以统一把时长信息写到spider里
                 mp4file = Mp4info(item['video_url'])
                 item['duration'] = mp4file.get_duration()
+                item['video_intro'] = item['video_name']
                 yield item
 
 
