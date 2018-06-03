@@ -9,11 +9,15 @@ from scrapy import signals
 
 from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 import random
-from selenium.webdriver.chrome import webdriver
-from selenium.webdriver.support.wait import WebDriverWait
-from scrapy.http import TextResponse, HtmlResponse
-from Porn.selenium_class.custom_wait import mp4_element_load_complete
+from scrapy.http import Request
+from scrapy.http import Response
+# from selenium.webdriver.chrome import webdriver
+# from selenium.webdriver.support.wait import WebDriverWait
+# from scrapy.http import TextResponse, HtmlResponse
+# from Porn.selenium_class.custom_wait import mp4_element_load_complete
 import logging
+import struct
+from io import StringIO
 
 
 class PornSpiderMiddleware(object):
@@ -148,40 +152,98 @@ class Ua(UserAgentMiddleware):
             request.headers['User-Agent'] = ua
 
 
-class SeleniumDownloaderMiddleware(object):
-    """
-    selenium下载中间件
-    """
+# class SeleniumDownloaderMiddleware(object):
+#     """
+#     selenium下载中间件
+#     """
 
-    def __init__(self, *args, **kwargs):
-        options = webdriver.Options()
+#     def __init__(self, *args, **kwargs):
+#         options = webdriver.Options()
 
-        UA = 'Mozilla/5.0 (Linux; Android 4.1.1; GT-N7100 Build/JRO03C) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/35.0.1916.138 Mobile Safari/537.36 T7/6.3'
-        mobileEmulation = {"userAgent": UA}
-        options.add_experimental_option('mobileEmulation', mobileEmulation)
-        options.set_headless(headless=True)
-        self.driver = webdriver.WebDriver(chrome_options=options)
-        print('初始化')
+#         UA = 'Mozilla/5.0 (Linux; Android 4.1.1; GT-N7100 Build/JRO03C) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/35.0.1916.138 Mobile Safari/537.36 T7/6.3'
+#         mobileEmulation = {"userAgent": UA}
+#         options.add_experimental_option('mobileEmulation', mobileEmulation)
+#         options.set_headless(headless=True)
+#         self.driver = webdriver.WebDriver(chrome_options=options)
+#         print('初始化')
 
-    @classmethod
-    def from_crawler(cls, crawler):
-        o = cls()
-        crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
-        return o
+#     @classmethod
+#     def from_crawler(cls, crawler):
+#         o = cls()
+#         crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
+#         return o
+
+#     def process_request(self, request, spider):
+#         if 'mp' in request.meta:
+#             self.driver.get(request.url)
+#             try:
+#                 wait = WebDriverWait(self.driver, 10)
+#                 video_url = wait.until(mp4_element_load_complete())
+#                 if video_url:
+#                     return HtmlResponse(request.url, body=video_url, encoding="utf-8", request=request)
+#             except Exception:
+#                 print('出错了')
+
+#         return None
+
+#     def spider_closed(self, spider):
+#         self.driver.quit()
+#         print('浏览器正常关闭')
+
+class DurationDownloaderMiddle(object):
+    def _set_range_headers(self, seek=0):
+        headers = {'Range': 'bytes={}-{}'.format(seek, seek + 7)}
+        return headers
 
     def process_request(self, request, spider):
-        if 'mp' in request.meta:
-            self.driver.get(request.url)
-            try:
-                wait = WebDriverWait(self.driver, 10)
-                video_url = wait.until(mp4_element_load_complete())
-                if video_url:
-                    return HtmlResponse(request.url, body=video_url, encoding="utf-8", request=request)
-            except Exception:
-                print('出错了')
-
+        if 'video' in request.meta and 'seek' not in request.meta:
+            item = request.meta['item']
+            if '.mp4' in request.url:
+                return Request(request.url,
+                               headers=self._set_range_headers(0),
+                               callback=spider.return_item,
+                               errback=spider.return_item,
+                               meta={'item': item, 'seek': 0, 'video': '1'}, dont_filter=True)
+            elif '.m3u8' in request.url:
+                Request(request.url,
+                        callback=spider.parse_3GPHP,
+                        errback=spider.parse_3GPHP,
+                        meta={'item': item, 'm3u8': '1'}, dont_filter=True)
         return None
 
-    def spider_closed(self, spider):
-        self.driver.quit()
-        print('浏览器正常关闭')
+    def process_response(self, request, response, spider):
+        # 处理m3u8时长
+        if '.m3u8' in request.url:
+            i = 0
+            data = response.body.decode('utf-8')
+            data = StringIO(data)
+            for line in data.readlines():
+                if line.startswith('#EXTINF:'):
+                    i = float(line.replace(',', '').split(':')[1]) + i
+            i = str(int(i)).encode('utf-8')
+            return Response(response.url, body=i, request=request)
+
+        # 处理mp4时长
+        if 'video' in request.meta and 'seek' in request.meta and response.status in range(200, 301):
+            item = request.meta['item']
+            if 'moov' in request.meta:
+                time_scale = int(struct.unpack('>I', response.body[:4])[0])
+                duration = int(struct.unpack('>I', response.body[-4:])[0])
+                duration = str(int(duration/time_scale)).encode('utf-8')
+                return Response(response.url, body=duration, request=request)
+            seek = request.meta['seek']
+            print(response.body)
+            size = int(struct.unpack('>I', response.body[:4])[0])
+            flag = response.body[-4:].decode('ascii')
+            if flag == 'moov':
+                return Request(response.url,
+                               callback=spider.return_item,
+                               errback=spider.return_item,
+                               headers=self._set_range_headers(seek+28),
+                               meta={'item': item, 'seek': seek+28, 'moov': 1, 'video': 1}, dont_filter=True)
+            return Request(response.url,
+                           callback=spider.return_item,
+                           errback=spider.return_item,
+                           headers=self._set_range_headers(size + seek),
+                           meta={'item': item, 'seek': seek + size, 'video': '1'}, dont_filter=True)
+        return response

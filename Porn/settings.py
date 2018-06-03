@@ -11,6 +11,9 @@
 
 BOT_NAME = 'Porn'
 
+# 超过10秒都没有响应的，懒得去下载了。速度也慢，几乎不能用
+DOWNLOAD_TIMEOUT = 10
+
 SPIDER_MODULES = ['Porn.spiders']
 NEWSPIDER_MODULE = 'Porn.spiders'
 
@@ -30,15 +33,15 @@ MONGODB_PASSWORD = 'password'
 ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+# CONCURRENT_REQUESTS = 1000
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 1
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
-#CONCURRENT_REQUESTS_PER_IP = 16
+# CONCURRENT_REQUESTS_PER_IP = 1000
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -63,7 +66,8 @@ DEFAULT_REQUEST_HEADERS = {
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    'Porn.middlewares.Ua': 401
+    'Porn.middlewares.Ua': 401,
+    'Porn.middlewares.DurationDownloaderMiddle': 901
 }
 
 # Enable or disable extensions

@@ -19,3 +19,5 @@ class PornItem(scrapy.Item):
     category = scrapy.Field()
     duration = scrapy.Field()
     video_intro = scrapy.Field()
+    # 临时存放
+    tmp = scrapy.Field()

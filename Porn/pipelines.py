@@ -22,7 +22,7 @@ class PornPipeline(object):
         settings = crawler.settings
         return cls(host=settings['MONGODB_IP'],
                    port=settings['MONGODB_PORT'],
-                   username=settings['MONGODBUSERNAME'],
+                   username=settings['MONGODB_USERNAME'],
                    password=settings['MONGODB_PASSWORD'])
 
     def process_item(self, item, spider):
@@ -36,10 +36,11 @@ class PornPipeline(object):
             return item
 
     def open_spider(self, spider):
-        self.client = MongoClient(host=self.host,
-                                  port=self.port,
-                                  username=self.username,
-                                  password=self.password)['porn'][spider.table]
+        self.c = MongoClient(host=self.host,
+                             port=self.port,
+                             username=self.username,
+                             password=self.password)
+        self.client = self.c['porn'][spider.table]
         spider.exist_list = []
         if hasattr(spider, 'incremental'):
             if spider.incremental == True:
@@ -48,4 +49,4 @@ class PornPipeline(object):
                     spider.exist_list.append(result['detail_url'])
 
     def close_spider(self, spider):
-        pass
+        self.c.close()

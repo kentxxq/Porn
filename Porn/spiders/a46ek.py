@@ -11,23 +11,27 @@ import datetime
 import logging
 import subprocess
 from urllib.parse import quote
-from Porn.tools.mediainfo import Mp4info
+import struct
+from scrapy.http import Request
 
 
 class A46ekSpider_10(scrapy.Spider):
-    name = 'a46ek_10'
-    allowed_domains = ['46ek.com']
-    start_urls = ['http://www.46ek.com/list/10.html']
+    name = 'a46_10'
+    # 193.112.129.108是ip地址，发现失效了，可以直接去去拿最新的地址
+    # 额。。居然放在。。我什么都不知道。。
+    # 后续很有可能会删掉这个页面
+    start_urls = ['http://www.46fn.com/list/10.html']
     custom_settings = {
         'ITEM_PIPELINES': {
             'Porn.pipelines.PornPipeline': 400
+        },
+        'SPIDER_MIDDLEWARES_BASE': {
+            'scrapy.spidermiddlewares.offsite.OffsiteMiddleware': None,
         }
     }
 
-    table = 'a46ek'
-
+    table = 'a46'
     ua = 'PC'
-
     category = '制服丝袜'
 
     def parse(self, response):
@@ -38,6 +42,7 @@ class A46ekSpider_10(scrapy.Spider):
         data = response.body
         soup = BeautifulSoup(data, 'html5lib')
         lis = soup.select('.text li')
+        baba = response.url
         for li in lis:
             detail_url = li.find('a').get('href')
             # 如果exist_list为空，则全量爬取。否则增量爬取
@@ -47,6 +52,7 @@ class A46ekSpider_10(scrapy.Spider):
             item = PornItem()
             item['category'] = self.category
             item['name'] = li.find('img').get('alt')
+            item['video_intro'] = item['name']
             # 因为部分的路径包括有中文字符，所以做一次处理
             item['img_url'] = quote(li.find('img').get('src'), safe=':/')
             item['update_date'] = li.find(
@@ -54,8 +60,9 @@ class A46ekSpider_10(scrapy.Spider):
             item['detail_url'] = response.urljoin(detail_url)
             yield response.follow(detail_url, self.parse_detail, meta={'item': item})
 
-        next_page = soup.find('a', text=re.compile('下一页')).get('href')
-        yield response.follow(next_page, self.parse)
+        next_page = soup.find('a', text=re.compile('下一页'))['href']
+        if next_page is not None:
+            yield response.follow(next_page, self.parse)
 
     def parse_detail(self, response):
         """
@@ -68,20 +75,24 @@ class A46ekSpider_10(scrapy.Spider):
             if """f:'""" in line:
                 # 同样也要处理url
                 item['video_url'] = quote(line.strip()[3: - 2], safe=':/')
-                # 由于部分网站是有视频长度信息可以爬取的，所以统一把时长信息写到spider里
-                mp4file = Mp4info(item['video_url'])
-                item['duration'] = mp4file.get_duration()
-                item['video_intro'] = item['video_name']
-                yield item
+                yield Request(item['video_url'], self.return_item, meta={'item': item, 'video': '1'})
+
+    def return_item(self, response):
+        if response.status in range(200, 301):
+            item = response.meta['item']
+            item['duration'] = response.body.decode('utf-8')
+            yield item
+        else:
+            print('mp4获取时长失败')
 
 
 class A46ekSpider_2(A46ekSpider_10):
-    name = 'a46ek_2'
+    name = 'a46_2'
     category = '亚洲日韩'
-    start_urls = ['http://www.46ek.com/list/2.html']
+    start_urls = ['http://www.46fn.com/list/2.html']
 
 
 class A46ekSpider_8(A46ekSpider_10):
-    name = 'a46ek_8'
+    name = 'a46_8'
     category = '偷拍视频'
-    start_urls = ['http://www.46ek.com/list/8.html']
+    start_urls = ['http://www.46fn.com/list/8.html']

@@ -3,6 +3,7 @@
 
 import struct
 import requests
+from io import StringIO
 
 
 class Mp4info:
@@ -27,9 +28,11 @@ class Mp4info:
     def _send_request(self):
         try:
             data = self.s.get(url=self.file, stream=True,
-                              timeout=self.timeout).raw.read()
+                              timeout=self.timeout)
+            data.raise_for_status()
+            data = data.raw.read()
         except requests.Timeout:
-            raise '连接超时:超过6秒(默认)服务器没有响应任何数据！'
+            raise self.file + '连接超时:超过6秒(默认)服务器没有响应任何数据！'
         return data
 
     def _find_moov_request(self):
@@ -53,15 +56,25 @@ class Mp4info:
             if flag == 'moov':
                 time_scale, duration = self._find_duration_request()
                 self.duration = duration/time_scale
-                return self.duration
+                return int(self.duration)
             else:
                 self.seek += size
+
+
+def get_m3u8_duration(url):
+    i = 0
+    page = requests.get(url, timeout=6)
+    data = StringIO(page.text)
+    for line in data.readlines():
+        if line.startswith('#EXTINF:'):
+            i = float(line.replace(',', '').split(':')[1]) + i
 
 
 if __name__ == '__main__':
     import time
     start = time.time()
-    url = 'http://tekeye.uk/html/images/Joren_Falls_Izu_Japan.mp4'
+    # url = 'http://tekeye.uk/html/images/Joren_Falls_Izu_Japan.mp4'
+    url = 'https://m5.6666piayer.com/4-skyhd045-hojo-maki-sky-angel-blue-45_med.mp4'
     file = Mp4info(url)
     a = file.get_duration()
     end = time.time()
