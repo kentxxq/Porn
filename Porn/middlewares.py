@@ -18,6 +18,7 @@ from scrapy.http import Response
 import logging
 import struct
 from io import StringIO
+import scrapy
 
 
 class PornSpiderMiddleware(object):
@@ -202,7 +203,7 @@ class DurationDownloaderMiddle(object):
                 return Request(request.url,
                                headers=self._set_range_headers(0),
                                callback=spider.return_item,
-                               errback=spider.return_item,
+                               #    errback=spider.return_item,
                                meta={'item': item, 'seek': 0, 'video': '1'}, dont_filter=True)
             elif '.m3u8' in request.url:
                 Request(request.url,
@@ -232,9 +233,12 @@ class DurationDownloaderMiddle(object):
                 duration = str(int(duration/time_scale)).encode('utf-8')
                 return Response(response.url, body=duration, request=request)
             seek = request.meta['seek']
-            print(response.body)
-            size = int(struct.unpack('>I', response.body[:4])[0])
-            flag = response.body[-4:].decode('ascii')
+            try:
+                size = int(struct.unpack('>I', response.body[:4])[0])
+                flag = response.body[-4:].decode('ascii')
+            except Exception:
+                print(request.url)
+                raise scrapy.exceptions.CloseSpider()
             if flag == 'moov':
                 return Request(response.url,
                                callback=spider.return_item,
