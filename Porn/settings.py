@@ -20,8 +20,8 @@ NEWSPIDER_MODULE = 'Porn.spiders'
 COMMANDS_MODULE = 'Porn.commands'
 
 # mongodb settings
-MONGODB_IP = 'ip'
-MONGODB_PORT = 'port'
+MONGODB_IP = '127.0.0.1'
+MONGODB_PORT = '27017'
 MONGODB_USERNAME = 'username'
 MONGODB_PASSWORD = 'password'
 

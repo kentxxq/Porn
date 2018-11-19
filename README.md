@@ -5,6 +5,15 @@
 
 > 采用scrapy+mongodb+schedule+subprocess，可以配置使用supervisor来进行控制
 
+设置mongodb 
+mongo —port 27017
+use admin
+db.createUser({user:"mongo_admin",pwd:"xxx",roles:[{role:"root",db:"admin"}]})
+
+设置python环境
+pipenv install 
+
+
 ### 使用
 
 `scrapy crawlall`进行所有的爬虫全量爬取

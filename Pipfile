@@ -1,0 +1,29 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+"beautifulsoup4" = "==4.6.3"
+cryptography = "==2.4.1"
+protobuf = "==3.6.1"
+ipaddr = "==2.2.0"
+lxml = "==4.2.5"
+numpy = "==1.15.4"
+opcode = "==1534770263.106256"
+ordereddict = "==1.1"
+pymongo = "==3.7.2"
+schedule = "==0.5.0"
+sitecustomize = "==1534770371.8174736"
+usercustomize = "==1.0.0"
+wincertstore = "==0.2"
+Cython = "==0.29"
+pyOpenSSL = "==18.0.0"
+Scrapy = "==1.5.1"
+"html5lib" = "*"
+requests = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.7"
